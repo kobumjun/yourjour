@@ -18,6 +18,35 @@ type Product = {
 
 export default function HomePage() {
   const { t } = useTranslation();
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const supabase = createBrowserSupabaseClient();
+    if (!supabase) return;
+    void supabase
+      .from("products")
+      .select("*")
+      .eq("is_visible", true)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(3)
+      .then(({ data }) => {
+        if (data) {
+          setProducts(data as Product[]);
+        }
+      });
+  }, []);
+
+  const filledProducts: Product[] =
+    products.length >= 3
+      ? products.slice(0, 3)
+      : [
+          ...products,
+          ...getCuratedFallbackProducts().slice(
+            0,
+            Math.max(0, 3 - products.length)
+          )
+        ].slice(0, 3);
 
   return (
     <div className="page home-page">
@@ -50,20 +79,28 @@ export default function HomePage() {
 
       <section className="preview-row" aria-label={t("home.previewRowLabel")}>
         <div className="preview-row-inner">
-          {getCuratedShowcaseCards().map((card) => (
-            <article key={card.title} className="preview-card">
+          {filledProducts.map((p) => (
+            <article key={p.id ?? p.slug} className="preview-card">
               <div className="preview-image">
                 <div
                   className="preview-image-inner"
-                  style={{ backgroundImage: `url(${card.imageUrl})` }}
+                  style={
+                    p.hero_image_url
+                      ? { backgroundImage: `url(${p.hero_image_url})` }
+                      : undefined
+                  }
                 />
               </div>
               <div className="preview-body">
-                <h3 className="preview-title">{card.title}</h3>
-                <p className="preview-subtitle">{card.subtitle}</p>
-                <p className="preview-price">{t("home.priceOnRequest")}</p>
+                <h3 className="preview-title">{p.title}</h3>
+                <p className="preview-subtitle">
+                  {p.description || t("home.defaultProductSubtitle")}
+                </p>
+                <p className="preview-price">
+                  {p.price_text || t("home.priceOnRequest")}
+                </p>
                 <Link
-                  href="/products"
+                  href={`/products${p.slug ? `/${p.slug}` : ""}`}
                   className="preview-button"
                 >
                   {t("products.viewDetail")}
@@ -136,24 +173,36 @@ export default function HomePage() {
   );
 }
 
-function getCuratedShowcaseCards() {
+function getCuratedFallbackProducts(): Product[] {
   return [
     {
+      id: -1,
       title: "Silk Light Necklace",
-      subtitle: "Fine champagne gold line with softened glow.",
-      imageUrl:
+      slug: "",
+      description: "Fine champagne gold line with softened glow.",
+      price_text: "Price on Request",
+      is_visible: true,
+      hero_image_url:
         "https://images.pexels.com/photos/1126993/pexels-photo-1126993.jpeg?auto=compress&cs=tinysrgb&w=600"
     },
     {
+      id: -2,
       title: "Aurora Ring Set",
-      subtitle: "Stackable rings for quiet, daily luxury.",
-      imageUrl:
+      slug: "",
+      description: "Stackable rings for quiet, daily luxury.",
+      price_text: "Price on Request",
+      is_visible: true,
+      hero_image_url:
         "https://images.pexels.com/photos/1158438/pexels-photo-1158438.jpeg?auto=compress&cs=tinysrgb&w=600"
     },
     {
+      id: -3,
       title: "Lumière Bracelet",
-      subtitle: "Minimal bracelet with soft reflected light.",
-      imageUrl:
+      slug: "",
+      description: "Minimal bracelet with soft reflected light.",
+      price_text: "Price on Request",
+      is_visible: true,
+      hero_image_url:
         "https://images.pexels.com/photos/1038710/pexels-photo-1038710.jpeg?auto=compress&cs=tinysrgb&w=600"
     }
   ];

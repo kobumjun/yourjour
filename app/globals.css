@@ -68,7 +68,7 @@ a {
 }
 
 .nav {
-  display: none;
+  display: flex;
   gap: 1.5rem;
   font-size: 0.9rem;
 }
@@ -102,9 +102,6 @@ a {
 }
 
 @media (min-width: 768px) {
-  .nav {
-    display: flex;
-  }
   .phone-link {
     display: inline-block;
   }
@@ -392,14 +389,14 @@ a {
 
 .accessories-deco {
   position: absolute;
-  width: 110px;
+  width: 120px;
   pointer-events: none;
   z-index: 0;
 }
 
 .accessories-deco-left {
-  left: -10px;
-  top: -10px;
+  left: -18px;
+  top: -12px;
 }
 
 .accessories-inner {
@@ -446,14 +443,14 @@ a {
 
 .wholesale-deco {
   position: absolute;
-  width: 115px;
+  width: 125px;
   pointer-events: none;
   z-index: 0;
 }
 
 .wholesale-deco-right {
-  right: -8px;
-  bottom: -8px;
+  right: -16px;
+  bottom: -12px;
 }
 
 .wholesale-inner-alt {
