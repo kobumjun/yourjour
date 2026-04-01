@@ -12,6 +12,7 @@ body {
     "Segoe UI", sans-serif;
   background: #f5f1ec;
   color: #3c3027;
+  overflow-x: hidden;
 }
 
 body {
@@ -69,7 +70,7 @@ a {
 
 .nav {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   font-size: 0.9rem;
 }
 
@@ -104,6 +105,13 @@ a {
 @media (min-width: 768px) {
   .phone-link {
     display: inline-block;
+  }
+}
+
+@media (max-width: 767px) {
+  .nav {
+    gap: 0.75rem;
+    font-size: 0.82rem;
   }
 }
 
@@ -295,18 +303,14 @@ a {
 
 .preview-row-inner {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem;
-  overflow-x: auto;
-  padding-bottom: 0.2rem;
 }
 
 .preview-card {
   background: #f9f3ec;
   border-radius: 1rem;
   padding: 0.8rem;
-  min-width: 170px;
 }
 
 .preview-image {
@@ -361,7 +365,6 @@ a {
 
 @media (max-width: 767px) {
   .preview-card {
-    min-width: 150px;
     padding: 0.7rem;
   }
   .preview-body {
@@ -381,6 +384,7 @@ a {
 
 .accessories {
   margin-top: 2.2rem;
+  position: relative;
 }
 
 .accessories-layout {
@@ -389,19 +393,20 @@ a {
 
 .accessories-deco {
   position: absolute;
-  width: 120px;
+  width: 90px;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
 }
 
 .accessories-deco-left {
-  left: -18px;
-  top: -12px;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-55%);
 }
 
 .accessories-inner {
   position: relative;
-  z-index: 1;
+  z-index: 0;
   border-radius: 1.5rem;
   padding: 1.6rem 1.4rem;
   background: linear-gradient(135deg, #f7ede2, #f0e2d1);
@@ -435,6 +440,7 @@ a {
 
 .wholesale-global {
   margin-top: 2.2rem;
+  position: relative;
 }
 
 .wholesale-layout {
@@ -443,14 +449,14 @@ a {
 
 .wholesale-deco {
   position: absolute;
-  width: 125px;
+  width: 95px;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
 }
 
 .wholesale-deco-right {
-  right: -16px;
-  bottom: -12px;
+  left: 6px;
+  bottom: 14px;
 }
 
 .wholesale-inner-alt {
