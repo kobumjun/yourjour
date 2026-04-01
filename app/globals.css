@@ -403,15 +403,15 @@ a {
 
 .accessories-deco {
   position: absolute;
-  width: 70px;
+  width: 56px;
   pointer-events: none;
   z-index: 1;
+  opacity: 0.9;
 }
 
 .accessories-deco-left {
-  right: 8px;
-  top: 8px;
-  transform: none;
+  right: -6px;
+  top: -6px;
 }
 
 .accessories-inner {
@@ -459,14 +459,15 @@ a {
 
 .wholesale-deco {
   position: absolute;
-  width: 75px;
+  width: 60px;
   pointer-events: none;
   z-index: 1;
+  opacity: 0.9;
 }
 
 .wholesale-deco-right {
-  left: 10px;
-  bottom: 10px;
+  left: -6px;
+  bottom: -6px;
 }
 
 .wholesale-inner-alt {
