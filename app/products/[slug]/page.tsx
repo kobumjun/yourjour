@@ -68,11 +68,7 @@ export default function ProductDetailPage() {
         <div className="product-detail-image">
           <div
             className="product-detail-image-inner"
-            style={
-              product.hero_image_url
-                ? { backgroundImage: `url(${product.hero_image_url})` }
-                : undefined
-            }
+            style={getDetailImageStyle(product, images)}
           />
           {images.length > 1 && (
             <div className="product-detail-gallery">
@@ -96,5 +92,15 @@ export default function ProductDetailPage() {
       </div>
     </div>
   );
+}
+
+function getDetailImageStyle(
+  product: Product,
+  imgs: ProductImage[]
+): React.CSSProperties | undefined {
+  const cover =
+    imgs.find((img) => img.is_cover) ?? imgs[0] ?? null;
+  const url = cover?.image_url ?? product.hero_image_url ?? null;
+  return url ? { backgroundImage: `url(${url})` } : undefined;
 }
 

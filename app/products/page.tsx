@@ -15,24 +15,50 @@ type Product = {
   hero_image_url: string | null;
 };
 
+type ProductImage = {
+  id: number;
+  product_id: number;
+  image_url: string;
+  is_cover: boolean;
+  sort_order: number | null;
+};
+
 export default function ProductsPage() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
+  const [imagesByProduct, setImagesByProduct] = useState<
+    Record<number, ProductImage[]>
+  >({});
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
     if (!supabase) return;
-    void supabase
-      .from("products")
-      .select("*")
-      .eq("is_visible", true)
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (data) {
-          setProducts(data as Product[]);
-        }
-      });
+    void (async () => {
+      const [{ data: productData }, { data: imageData }] = await Promise.all([
+        supabase
+          .from("products")
+          .select("*")
+          .eq("is_visible", true)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("product_images")
+          .select("*")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true })
+      ]);
+      if (productData) {
+        setProducts(productData as Product[]);
+      }
+      if (imageData) {
+        const grouped: Record<number, ProductImage[]> = {};
+        (imageData as ProductImage[]).forEach((img) => {
+          if (!grouped[img.product_id]) grouped[img.product_id] = [];
+          grouped[img.product_id].push(img);
+        });
+        setImagesByProduct(grouped);
+      }
+    })();
   }, []);
 
   return (
@@ -50,11 +76,7 @@ export default function ProductsPage() {
             <div className="product-image">
               <div
                 className="product-image-inner"
-                style={
-                  p.hero_image_url
-                    ? { backgroundImage: `url(${p.hero_image_url})` }
-                    : undefined
-                }
+                style={getProductImageStyle(p, imagesByProduct[p.id])}
               />
             </div>
             <div className="product-body">
@@ -77,5 +99,15 @@ export default function ProductsPage() {
       </section>
     </div>
   );
+}
+
+function getProductImageStyle(
+  product: Product,
+  imgs?: ProductImage[]
+): React.CSSProperties | undefined {
+  const cover =
+    imgs?.find((img) => img.is_cover) ?? (imgs && imgs[0]) ?? null;
+  const url = cover?.image_url ?? product.hero_image_url ?? null;
+  return url ? { backgroundImage: `url(${url})` } : undefined;
 }
 
