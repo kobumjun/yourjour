@@ -99,47 +99,38 @@ export default function AdminProductsPage() {
     try {
       const payload = { ...form };
 
-      const supabase = createBrowserSupabaseClient();
-      if (!supabase) {
-        setMessage(t("admin.saveError"));
-        setLoading(false);
-        return;
-      }
-
       let coverUrl: string | null = null;
-      const uploadedUrls: string[] = [];
+      let uploadedUrls: string[] = [];
 
       if (selectedFiles.length > 0) {
-        for (let index = 0; index < selectedFiles.length; index++) {
-          const file = selectedFiles[index];
-          const fileExt = file.name.split(".").pop() ?? "jpg";
-          const fileName = `${Date.now()}-${Math.random()
-            .toString(36)
-            .slice(2)}.${fileExt}`;
-          const filePath = `products/${fileName}`;
-          const { error: uploadError } = await supabase.storage
-            .from("product_images")
-            .upload(filePath, file);
-          if (!uploadError) {
-            const {
-              data: { publicUrl }
-            } = supabase.storage.from("product_images").getPublicUrl(filePath);
-            // Temporary logging to inspect upload/public URL
-            console.log("Uploaded product image", {
-              filePath,
-              publicUrl
-            });
-            uploadedUrls.push(publicUrl);
-            if (coverUrl === null) {
-              coverUrl = publicUrl;
-            }
-          } else {
-            console.error("Failed to upload product image", {
-              filePath,
-              error: uploadError.message
-            });
-          }
+        const body = new FormData();
+        selectedFiles.forEach((file) => {
+          body.append("files", file);
+        });
+
+        console.log("Admin submit uploading files", {
+          count: selectedFiles.length,
+          names: selectedFiles.map((f) => f.name)
+        });
+
+        const uploadRes = await fetch("/api/products/upload", {
+          method: "POST",
+          body
+        });
+
+        if (!uploadRes.ok) {
+          const errText = await uploadRes.text();
+          console.error("Admin upload API failed", { status: uploadRes.status, errText });
+          setMessage(t("admin.saveError"));
+          setLoading(false);
+          return;
         }
+
+        const { urls } = (await uploadRes.json()) as { urls: string[] };
+        uploadedUrls = urls ?? [];
+        coverUrl = uploadedUrls[0] ?? null;
+
+        console.log("Admin upload API succeeded", { uploadedCount: uploadedUrls.length });
       }
 
       if (coverUrl) {
