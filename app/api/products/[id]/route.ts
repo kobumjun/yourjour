@@ -27,6 +27,11 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     .select()
     .single();
   if (error || !data) {
+    console.error("Failed to update product", {
+      error: error?.message,
+      productId: params.id,
+      productData
+    });
     return NextResponse.json(
       { error: error?.message ?? "Update failed" },
       { status: 400 }
@@ -36,7 +41,16 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
   const productId = Number(params.id);
 
   if (Array.isArray(uploadedImages)) {
-    await supabase.from("product_images").delete().eq("product_id", productId);
+    const { error: deleteError } = await supabase
+      .from("product_images")
+      .delete()
+      .eq("product_id", productId);
+    if (deleteError) {
+      console.error("Failed to delete existing product_images", {
+        productId,
+        error: deleteError.message
+      });
+    }
     if (uploadedImages.length > 0) {
       const rows = uploadedImages.map((url, index) => ({
         product_id: productId,
@@ -44,7 +58,20 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
         is_cover: index === 0,
         sort_order: index
       }));
-      await supabase.from("product_images").insert(rows);
+      const { error: imageInsertError } = await supabase
+        .from("product_images")
+        .insert(rows);
+      if (imageInsertError) {
+        console.error("Failed to insert updated product_images rows", {
+          productId,
+          error: imageInsertError.message
+        });
+      } else {
+        console.log("Updated product_images rows", {
+          productId,
+          count: rows.length
+        });
+      }
     }
   }
 

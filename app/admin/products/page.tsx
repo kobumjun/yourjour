@@ -67,6 +67,9 @@ export default function AdminProductsPage() {
       ]);
 
     if (!productError && productData) {
+      console.log("Fetched products for admin", {
+        count: productData.length
+      });
       setProducts(productData as Product[]);
     }
     if (imageData) {
@@ -74,6 +77,9 @@ export default function AdminProductsPage() {
       (imageData as ProductImage[]).forEach((img) => {
         if (!grouped[img.product_id]) grouped[img.product_id] = [];
         grouped[img.product_id].push(img);
+      });
+      console.log("Fetched product_images for admin", {
+        total: imageData.length
       });
       setExistingImages(grouped);
     }
@@ -112,16 +118,26 @@ export default function AdminProductsPage() {
             .slice(2)}.${fileExt}`;
           const filePath = `products/${fileName}`;
           const { error: uploadError } = await supabase.storage
-            .from("product-images")
+            .from("product_images")
             .upload(filePath, file);
           if (!uploadError) {
             const {
               data: { publicUrl }
-            } = supabase.storage.from("product-images").getPublicUrl(filePath);
+            } = supabase.storage.from("product_images").getPublicUrl(filePath);
+            // Temporary logging to inspect upload/public URL
+            console.log("Uploaded product image", {
+              filePath,
+              publicUrl
+            });
             uploadedUrls.push(publicUrl);
             if (coverUrl === null) {
               coverUrl = publicUrl;
             }
+          } else {
+            console.error("Failed to upload product image", {
+              filePath,
+              error: uploadError.message
+            });
           }
         }
       }

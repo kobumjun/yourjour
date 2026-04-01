@@ -22,6 +22,10 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
   if (error || !data) {
+    console.error("Failed to insert product", {
+      error: error?.message,
+      productData
+    });
     return NextResponse.json(
       { error: error?.message ?? "Insert failed" },
       { status: 400 }
@@ -37,7 +41,17 @@ export async function POST(req: NextRequest) {
       is_cover: index === 0,
       sort_order: index
     }));
-    await supabase.from("product_images").insert(rows);
+    const { error: imageInsertError } = await supabase
+      .from("product_images")
+      .insert(rows);
+    if (imageInsertError) {
+      console.error("Failed to insert product_images rows", {
+        productId,
+        error: imageInsertError.message
+      });
+    } else {
+      console.log("Inserted product_images rows", { productId, count: rows.length });
+    }
   }
 
   return NextResponse.json(data ?? null, { status: 201 });
