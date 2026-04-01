@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createBrowserSupabaseClient } from "../../lib/supabaseClient";
 import { useTranslation } from "../../components/LanguageContext";
@@ -61,6 +61,21 @@ export default function ProductsPage() {
     })();
   }, []);
 
+  const PAGE_SIZE = 8;
+  const [page, setPage] = useState(1);
+
+  const totalPages = useMemo(
+    () => (products.length ? Math.ceil(products.length / PAGE_SIZE) : 1),
+    [products.length]
+  );
+
+  const currentPage = Math.min(Math.max(page, 1), totalPages);
+
+  const pagedProducts = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return products.slice(start, start + PAGE_SIZE);
+  }, [products, currentPage]);
+
   return (
     <div className="page products-page">
       <header className="page-header">
@@ -71,7 +86,7 @@ export default function ProductsPage() {
         {products.length === 0 && (
           <p className="empty-text">{t("products.empty")}</p>
         )}
-        {products.map((p) => (
+        {pagedProducts.map((p) => (
           <article key={p.id} className="product-card">
             <div className="product-image">
               <div
@@ -97,6 +112,28 @@ export default function ProductsPage() {
           </article>
         ))}
       </section>
+      {totalPages > 1 && (
+        <div className="products-pagination" aria-label="Product pages">
+          {Array.from({ length: totalPages }).map((_, index) => {
+            const pageNumber = index + 1;
+            const isActive = pageNumber === currentPage;
+            return (
+              <button
+                key={pageNumber}
+                type="button"
+                className={
+                  isActive
+                    ? "pagination-badge active"
+                    : "pagination-badge"
+                }
+                onClick={() => setPage(pageNumber)}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

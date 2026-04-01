@@ -88,6 +88,11 @@ export default function ProductDetailPage() {
           <p className="product-detail-price">
             {product.price_text || t("home.priceOnRequest")}
           </p>
+          <div className="product-detail-cta">
+            <button type="button" className="btn-primary">
+              {t("home.viewCollection")}
+            </button>
+          </div>
         </div>
       </div>
     </div>
