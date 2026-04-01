@@ -15,10 +15,19 @@ type Product = {
   hero_image_url: string | null;
 };
 
+type ProductImage = {
+  id: number;
+  product_id: number;
+  image_url: string;
+  is_cover: boolean;
+  sort_order: number | null;
+};
+
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { t } = useTranslation();
   const [product, setProduct] = useState<Product | null>(null);
+  const [images, setImages] = useState<ProductImage[]>([]);
 
   useEffect(() => {
     const supabase = createBrowserSupabaseClient();
@@ -28,9 +37,19 @@ export default function ProductDetailPage() {
       .select("*")
       .eq("slug", slug)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (data) {
-          setProduct(data as Product);
+          const productData = data as Product;
+          setProduct(productData);
+          const { data: imageData } = await supabase
+            .from("product_images")
+            .select("*")
+            .eq("product_id", productData.id)
+            .order("sort_order", { ascending: true })
+            .order("created_at", { ascending: true });
+          if (imageData) {
+            setImages(imageData as ProductImage[]);
+          }
         }
       });
   }, [slug]);
@@ -55,6 +74,17 @@ export default function ProductDetailPage() {
                 : undefined
             }
           />
+          {images.length > 1 && (
+            <div className="product-detail-gallery">
+              {images.slice(1).map((img) => (
+                <div
+                  key={img.id}
+                  className="product-detail-thumb"
+                  style={{ backgroundImage: `url(${img.image_url})` }}
+                />
+              ))}
+            </div>
+          )}
         </div>
         <div className="product-detail-body">
           <h1>{product.title}</h1>

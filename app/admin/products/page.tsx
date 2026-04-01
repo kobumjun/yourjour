@@ -15,6 +15,14 @@ type Product = {
   hero_image_url: string | null;
 };
 
+type ProductImage = {
+  id: number;
+  product_id: number;
+  image_url: string;
+  is_cover: boolean;
+  sort_order: number | null;
+};
+
 const emptyForm: Omit<Product, "id"> = {
   title: "",
   slug: "",
@@ -32,21 +40,42 @@ export default function AdminProductsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [existingImages, setExistingImages] = useState<
+    Record<number, ProductImage[]>
+  >({});
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   useEffect(() => {
-    fetchProducts();
+    fetchProductsAndImages();
   }, []);
 
-  async function fetchProducts() {
+  async function fetchProductsAndImages() {
     const supabase = createBrowserSupabaseClient();
     if (!supabase) return;
-    const { data, error } = await supabase
-      .from("products")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false });
-    if (!error && data) {
-      setProducts(data as Product[]);
+    const [{ data: productData, error: productError }, { data: imageData }] =
+      await Promise.all([
+        supabase
+          .from("products")
+          .select("*")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("product_images")
+          .select("*")
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true })
+      ]);
+
+    if (!productError && productData) {
+      setProducts(productData as Product[]);
+    }
+    if (imageData) {
+      const grouped: Record<number, ProductImage[]> = {};
+      (imageData as ProductImage[]).forEach((img) => {
+        if (!grouped[img.product_id]) grouped[img.product_id] = [];
+        grouped[img.product_id].push(img);
+      });
+      setExistingImages(grouped);
     }
   }
 
@@ -63,12 +92,50 @@ export default function AdminProductsPage() {
     setMessage(null);
     try {
       const payload = { ...form };
+
+      const supabase = createBrowserSupabaseClient();
+      if (!supabase) {
+        setMessage(t("admin.saveError"));
+        setLoading(false);
+        return;
+      }
+
+      let coverUrl: string | null = null;
+      const uploadedUrls: string[] = [];
+
+      if (selectedFiles.length > 0) {
+        for (let index = 0; index < selectedFiles.length; index++) {
+          const file = selectedFiles[index];
+          const fileExt = file.name.split(".").pop() ?? "jpg";
+          const fileName = `${Date.now()}-${Math.random()
+            .toString(36)
+            .slice(2)}.${fileExt}`;
+          const filePath = `products/${fileName}`;
+          const { error: uploadError } = await supabase.storage
+            .from("product-images")
+            .upload(filePath, file);
+          if (!uploadError) {
+            const {
+              data: { publicUrl }
+            } = supabase.storage.from("product-images").getPublicUrl(filePath);
+            uploadedUrls.push(publicUrl);
+            if (coverUrl === null) {
+              coverUrl = publicUrl;
+            }
+          }
+        }
+      }
+
+      if (coverUrl) {
+        payload.hero_image_url = coverUrl;
+      }
+
       const res = await fetch(
         editingId ? `/api/products/${editingId}` : "/api/products",
         {
           method: editingId ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ ...payload, uploadedImages: uploadedUrls })
         }
       );
       if (!res.ok) {
@@ -77,7 +144,8 @@ export default function AdminProductsPage() {
         setMessage(t("admin.saveSuccess"));
         setForm(emptyForm);
         setEditingId(null);
-        fetchProducts();
+        setSelectedFiles([]);
+        fetchProductsAndImages();
       }
     } catch {
       setMessage(t("admin.saveError"));
@@ -88,6 +156,7 @@ export default function AdminProductsPage() {
 
   async function handleEdit(p: Product) {
     setEditingId(p.id);
+    setSelectedFiles([]);
     setForm({
       title: p.title,
       slug: p.slug,
@@ -109,7 +178,7 @@ export default function AdminProductsPage() {
         setMessage(t("admin.deleteError"));
       } else {
         setMessage(t("admin.deleteSuccess"));
-        fetchProducts();
+        fetchProductsAndImages();
       }
     } catch {
       setMessage(t("admin.deleteError"));
@@ -172,12 +241,25 @@ export default function AdminProductsPage() {
             </label>
           </div>
           <label className="field">
-            <span>{t("admin.fieldHeroImageUrl")}</span>
+            <span>Product images</span>
             <input
-              value={form.hero_image_url ?? ""}
-              onChange={(e) => handleChange("hero_image_url", e.target.value)}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) =>
+                setSelectedFiles(e.target.files ? Array.from(e.target.files) : [])
+              }
             />
           </label>
+          {selectedFiles.length > 0 && (
+            <div className="admin-image-previews">
+              {selectedFiles.map((file) => (
+                <div key={file.name} className="admin-image-preview">
+                  <img src={URL.createObjectURL(file)} alt={file.name} />
+                </div>
+              ))}
+            </div>
+          )}
           <label className="checkbox-field">
             <input
               type="checkbox"
@@ -214,51 +296,65 @@ export default function AdminProductsPage() {
       <section className="admin-products-list">
         <h2>{t("admin.existingProducts")}</h2>
         <div className="admin-products-table">
-          {products.map((p) => (
-            <div key={p.id} className="admin-product-row">
-              <div className="admin-product-main">
-                <div className="thumb">
-                  <div
-                    className="thumb-inner"
-                    style={
-                      p.hero_image_url
-                        ? { backgroundImage: `url(${p.hero_image_url})` }
-                        : undefined
-                    }
-                  />
-                </div>
-                <div>
-                  <div className="admin-product-title">{p.title}</div>
-                  <div className="admin-product-meta">
-                    <span>{p.slug}</span>
-                    <span>
-                      {t("admin.visibleLabel")}:{" "}
-                      {p.is_visible ? t("admin.visibleYes") : t("admin.visibleNo")}
-                    </span>
-                    <span>
-                      {t("admin.sortOrderLabel")}: {p.sort_order ?? 0}
-                    </span>
+          {products.map((p) => {
+            const imgs = existingImages[p.id] ?? [];
+            const cover =
+              imgs.find((img) => img.is_cover) ?? imgs[0] ?? null;
+            return (
+              <div key={p.id} className="admin-product-row">
+                <div className="admin-product-main">
+                  <div className="thumb">
+                    <div
+                      className="thumb-inner"
+                      style={
+                        cover
+                          ? { backgroundImage: `url(${cover.image_url})` }
+                          : p.hero_image_url
+                          ? { backgroundImage: `url(${p.hero_image_url})` }
+                          : undefined
+                      }
+                    />
+                  </div>
+                  <div>
+                    <div className="admin-product-title">{p.title}</div>
+                    <div className="admin-product-meta">
+                      <span>{p.slug}</span>
+                      <span>
+                        {t("admin.visibleLabel")}:{" "}
+                        {p.is_visible
+                          ? t("admin.visibleYes")
+                          : t("admin.visibleNo")}
+                      </span>
+                      <span>
+                        {t("admin.sortOrderLabel")}: {p.sort_order ?? 0}
+                      </span>
+                    </div>
+                    {imgs.length > 0 && (
+                      <div className="admin-product-meta">
+                        <span>{imgs.length} image(s)</span>
+                      </div>
+                    )}
                   </div>
                 </div>
+                <div className="admin-product-actions">
+                  <button
+                    type="button"
+                    className="btn-outline small"
+                    onClick={() => handleEdit(p)}
+                  >
+                    {t("admin.edit")}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-text small"
+                    onClick={() => handleDelete(p.id)}
+                  >
+                    {t("admin.delete")}
+                  </button>
+                </div>
               </div>
-              <div className="admin-product-actions">
-                <button
-                  type="button"
-                  className="btn-outline small"
-                  onClick={() => handleEdit(p)}
-                >
-                  {t("admin.edit")}
-                </button>
-                <button
-                  type="button"
-                  className="btn-text small"
-                  onClick={() => handleDelete(p.id)}
-                >
-                  {t("admin.delete")}
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {products.length === 0 && (
             <p className="empty-text">{t("admin.noProducts")}</p>
           )}

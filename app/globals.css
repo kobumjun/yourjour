@@ -316,7 +316,7 @@ a {
   border-radius: 0.9rem;
   overflow: hidden;
   background: #d1b69a;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   margin-bottom: 0.6rem;
 }
 
@@ -334,11 +334,19 @@ a {
 .preview-title {
   font-size: 0.9rem;
   margin: 0 0 0.2rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .preview-subtitle {
   opacity: 0.7;
   margin: 0 0 0.3rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .preview-price {
@@ -354,6 +362,26 @@ a {
   display: inline-flex;
 }
 
+@media (max-width: 767px) {
+  .preview-card {
+    min-width: 150px;
+    padding: 0.7rem;
+  }
+  .preview-body {
+    font-size: 0.76rem;
+  }
+  .preview-title {
+    font-size: 0.84rem;
+  }
+  .preview-subtitle {
+    font-size: 0.76rem;
+  }
+  .preview-button {
+    font-size: 0.72rem;
+    padding: 0.3rem 0.8rem;
+  }
+}
+
 .accessories {
   margin-top: 2.2rem;
 }
@@ -364,16 +392,19 @@ a {
 
 .accessories-deco {
   position: absolute;
-  width: 140px;
+  width: 110px;
   pointer-events: none;
+  z-index: 0;
 }
 
 .accessories-deco-left {
-  left: -20px;
-  top: -28px;
+  left: -10px;
+  top: -10px;
 }
 
 .accessories-inner {
+  position: relative;
+  z-index: 1;
   border-radius: 1.5rem;
   padding: 1.6rem 1.4rem;
   background: linear-gradient(135deg, #f7ede2, #f0e2d1);
@@ -415,16 +446,19 @@ a {
 
 .wholesale-deco {
   position: absolute;
-  width: 150px;
+  width: 115px;
   pointer-events: none;
+  z-index: 0;
 }
 
 .wholesale-deco-right {
-  right: -26px;
-  bottom: -34px;
+  right: -8px;
+  bottom: -8px;
 }
 
 .wholesale-inner-alt {
+  position: relative;
+  z-index: 1;
   border-radius: 1.5rem;
   padding: 1.6rem 1.4rem;
   background: linear-gradient(135deg, #f6ece1, #edddcb);
@@ -553,6 +587,21 @@ a {
   background-size: cover;
   background-position: center;
   aspect-ratio: 4 / 5;
+}
+
+.product-detail-gallery {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.product-detail-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: 0.7rem;
+  background-size: cover;
+  background-position: center;
+  background-color: #d1b69a;
 }
 
 .product-detail-body h1 {
@@ -747,5 +796,26 @@ a {
 .admin-product-actions {
   display: flex;
   gap: 0.5rem;
+}
+
+.admin-image-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.admin-image-preview {
+  width: 60px;
+  height: 60px;
+  border-radius: 0.8rem;
+  overflow: hidden;
+  background: #d0b49a;
+}
+
+.admin-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 

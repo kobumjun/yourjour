@@ -11,11 +11,36 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { data, error } = await supabase.from("products").insert(body).select();
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  const { uploadedImages, ...productData } = body as {
+    uploadedImages?: string[];
+    [key: string]: unknown;
+  };
+
+  const { data, error } = await supabase
+    .from("products")
+    .insert(productData)
+    .select()
+    .single();
+  if (error || !data) {
+    return NextResponse.json(
+      { error: error?.message ?? "Insert failed" },
+      { status: 400 }
+    );
   }
-  return NextResponse.json(data[0] ?? null, { status: 201 });
+
+  const productId = data.id as number;
+
+  if (Array.isArray(uploadedImages) && uploadedImages.length > 0) {
+    const rows = uploadedImages.map((url, index) => ({
+      product_id: productId,
+      image_url: url,
+      is_cover: index === 0,
+      sort_order: index
+    }));
+    await supabase.from("product_images").insert(rows);
+  }
+
+  return NextResponse.json(data ?? null, { status: 201 });
 }
 
 export async function GET() {
